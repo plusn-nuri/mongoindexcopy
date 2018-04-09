@@ -1,9 +1,9 @@
 from pymongo import MongoClient
 from urlparse import urlparse
-from settings import *
+import settings
 from bson import json_util
 
-source_db_name = urlparse(source_connection).path[1:]
+
 
 
 def remark(*parts):
@@ -11,10 +11,10 @@ def remark(*parts):
 
 
 def should_include_collection(collection):
-    if('*' in include_collections):
+    if('*' in settings.include_collections):
         return True
 
-    return collection in include_collections
+    return collection in settings.include_collections
 
 
 def strip_catalog_fields(definition):
@@ -45,21 +45,24 @@ def get_indexes(db, collection_names):
 
         yield item
 
+source_db_name = urlparse(settings.source_connection).path[1:]
 
-remark('included collections:', include_collections)
-remark('server connection:', source_connection)
-remark('source database:', source_db_name)
+remark('Included Collections:', settings.include_collections)
+remark('Server Connection:', settings.source_connection)
+remark('Source Database:', source_db_name)
 
-source_db = MongoClient(source_connection).get_database(source_db_name)
+source_db = MongoClient(settings.source_connection).get_database(source_db_name)
 
 collections = get_collections(source_db, source_db_name)
 
 indexes = get_indexes(source_db, collections)
 
 for item in indexes:
-    remark('Collection:', item['name'])
+    remark("********************************")
+    remark("** Collection", item['name'])
+    remark("********************************")
     for ix in item['indexes']:
-        remark("Index:", ix['name'])
+        remark("   ==> Index:", ix['name'])
         field_def = ix.pop('key')
         options = ix
         statement = 'db.' + item['name'] + '.createIndex(' + json_util.dumps(
